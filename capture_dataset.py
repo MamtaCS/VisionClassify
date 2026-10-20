@@ -1,11 +1,13 @@
 
+import sys
 import cv2
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
+class_name = sys.argv[1].lower() if len(sys.argv) > 1 else "perfume"
 
 # Save photos in the folder used by train.py
-SAVE_DIR = BASE_DIR / "DataSet" / "perfume"
+SAVE_DIR = BASE_DIR / "DataSet" / class_name
 SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
 camera = cv2.VideoCapture(0)
@@ -28,7 +30,7 @@ while True:
 
     cv2.putText(
         frame,
-        f"perfume photos: {count}",
+        f"{class_name} photos: {count}",
         (10, 30),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.8,
@@ -36,11 +38,11 @@ while True:
         2
     )
 
-    cv2.imshow("VisionClassify - Perfume Capture", frame)
+    cv2.imshow(f"VisionClassify - {class_name.capitalize()} Capture", frame)
     key = cv2.waitKey(1) & 0xFF
 
     if key == ord(" "):
-        filename = SAVE_DIR / f"perfume_{count + 1:03d}.jpg"
+        filename = SAVE_DIR / f"{class_name}_{count + 1:03d}.jpg"
 
         if cv2.imwrite(str(filename), frame):
             count += 1
@@ -53,4 +55,4 @@ while True:
 
 camera.release()
 cv2.destroyAllWindows()
-print("Total perfume photos:", count)
+print(f"Total {class_name} photos:", count)

@@ -20,6 +20,7 @@ if not image_path.is_file():
 saved = joblib.load(MODEL_PATH)
 model = saved["model"]
 image_size = tuple(saved["image_size"])
+model_name = saved.get("name", "Model")
 
 image = cv2.imread(str(image_path))
 if image is None:
@@ -35,6 +36,7 @@ hog = cv2.HOGDescriptor(
 features = hog.compute(gray).flatten().reshape(1, -1)
 
 prediction = model.predict(features)[0]
+print(f"Model: {model_name}")
 print(f"Predicted item: {prediction}")
 
 if hasattr(model, "predict_proba"):
