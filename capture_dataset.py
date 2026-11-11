@@ -28,8 +28,9 @@ while True:
         print("Could not capture image.")
         break
 
+    preview = frame.copy()
     cv2.putText(
-        frame,
+        preview,
         f"{class_name} photos: {count}",
         (10, 30),
         cv2.FONT_HERSHEY_SIMPLEX,
@@ -38,7 +39,7 @@ while True:
         2
     )
 
-    cv2.imshow(f"VisionClassify - {class_name.capitalize()} Capture", frame)
+    cv2.imshow(f"VisionClassify - {class_name.capitalize()} Capture", preview)
     key = cv2.waitKey(1) & 0xFF
 
     if key == ord(" "):
