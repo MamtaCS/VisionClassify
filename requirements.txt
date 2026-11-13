@@ -1,5 +1,13 @@
 
+# Image processing
 opencv-python
+
+# Numerical operations
 numpy
+
+# Machine learning (Random Forest scripts)
 scikit-learn
 joblib
+
+# YOLO ONNX inference
+onnxruntime

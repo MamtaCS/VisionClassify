@@ -1,7 +1,33 @@
+
+# Python virtual environments
 .venv/
 venv/
+.venv-yolo/
+
+# Python cache
 __pycache__/
 *.py[cod]
+
+# Environment variables
 .env
+
+# Old model results
 result/
+
+# Personal test images
 pen_new.jpg
+glasses_new.jpg
+detection_result.jpg
+
+# YOLO datasets and annotation batches
+YOLO_Dataset/
+YOLO_Dataset.zip
+yolo_all/
+yolo_batch_02/
+yolo_batch_03/
+yolo_batch_04/
+yolo_test_images/
+test_images/
+
+# Backup files
+vision_utils_backup.py

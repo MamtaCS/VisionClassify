@@ -1,254 +1,263 @@
-# VisionClassify
+# VisionClassify – Real-Time Object Detection
 
-VisionClassify is a beginner-friendly, local Python project for classifying
-images of ten everyday objects. It uses OpenCV to preprocess images and
-extract Histogram of Oriented Gradients (HOG) features, then uses a
-scikit-learn Random Forest classifier to predict an object's category.
+VisionClassify is a Python-based real-time object detection system that uses **YOLO11n** to identify everyday objects through images and a live webcam.
 
-The project supports still-image prediction and live webcam classification.
-It predicts one class for an image or full webcam frame; it is not an object
-detector and does not locate multiple objects.
+The project uses a custom-trained YOLO model with 10 object categories. It detects objects, draws bounding boxes around them, and displays their predicted class names and confidence scores.
 
-## Problem statement and objectives
+The trained model is exported to ONNX format and runs locally using ONNX Runtime, allowing object detection without requiring PyTorch on the target Windows machine.
 
-Images of the same object can look different when the background, lighting,
-angle, distance, or camera changes. This project demonstrates a complete
-image-classification workflow for a small set of everyday objects.
+## Problem Statement and Objectives
 
-Its objectives are to:
+Recognizing everyday objects automatically is a useful application of computer vision. However, objects can appear different depending on lighting, background, camera angle, distance and environment.
 
-- Organize example images by category and use folder names as labels.
-- Apply consistent image preprocessing and HOG feature extraction.
-- Compare Random Forest sizes using grouped validation.
-- Evaluate predictions on a held-out grouped test split.
-- Predict a category from a still image or webcam frame.
-- Return `Unknown Object` for predictions whose model score is below a
-  validation-selected threshold.
+The objectives of VisionClassify are to:
 
-## Technologies
+- Develop a custom object detection model for everyday objects.
+- Detect multiple objects and locate them using bounding boxes.
+- Perform real-time detection through a webcam.
+- Display predicted object categories and confidence scores.
+- Run the trained model locally using ONNX Runtime.
+- Build a simple and practical computer vision application.
 
-- **Python**
-- **OpenCV** (`opencv-python`) for image loading, preprocessing, HOG features,
-  webcam capture, and display
-- **NumPy** for numerical operations
-- **scikit-learn** for the Random Forest, grouped cross-validation, and
-  evaluation metrics
-- **Joblib** for saving and loading the trained model
+## Supported Object Categories
 
-The application runs locally. It does not require a database, web server, or
-external API.
+VisionClassify currently detects the following 10 categories:
 
-## Supported object categories
+1. AirPods
+2. Apple
+3. Bottle
+4. Glasses
+5. Mobile
+6. Notebook
+7. Pen
+8. Perfume
+9. Remote
+10. Watch
 
-The project currently uses these ten dataset folders as class labels:
+## Technologies Used
 
-1. `airpods`
-2. `apple`
-3. `bottle`
-4. `glasses`
-5. `mobile`
-6. `notebook`
-7. `pen`
-8. `perfume`
-9. `remote`
-10. `watch`
+- **Python** – Main programming language.
+- **YOLO11n** – Object detection model.
+- **Ultralytics** – Model training and ONNX export.
+- **OpenCV** – Image processing, webcam access and bounding-box visualization.
+- **NumPy** – Numerical operations and image preprocessing.
+- **ONNX Runtime** – Local execution of the exported model.
+- **Google Colab** – Model training using an NVIDIA GPU.
 
-`train.py` expects ten categories. Put each image inside the folder named for
-its category.
-
-## Project structure
+## Project Structure
 
 ```text
 VisionClassify/
-├── DataSet/
-│   ├── airpods/
-│   ├── apple/
-│   ├── bottle/
-│   ├── glasses/
-│   ├── mobile/
-│   ├── notebook/
-│   ├── pen/
-│   ├── perfume/
-│   ├── remote/
-│   └── watch/
-├── result/
-│   └── best_model.joblib       # Generated model; result/ is Git-ignored
-├── capture_dataset.py          # Capture labeled images from a webcam
-├── live_detect.py              # Live webcam classification
-├── test.py                     # Still-image classification
-├── train.py                    # Grouped model selection, evaluation, and training
-├── vision_utils.py             # Shared preprocessing and prediction logic
-├── requirements.txt            # Python dependencies
-└── README.md
+│
+├── DataSet/                  # Original object images
+│
+├── models/
+│   └── best.onnx             # Trained YOLO model
+│
+├── test_images/              # Images for testing
+│
+├── YOLO_Dataset/             # Training and validation dataset
+│
+├── train.py                  # Previous Random Forest training script
+├── test.py                   # Previous image classification script
+├── live_detect.py            # Previous webcam classification script
+│
+├── test_yolo.py              # ONNX model loading test
+├── test_yolo_image.py        # YOLO image detection
+├── webcam_yolo.py            # YOLO live webcam detection
+│
+├── capture_dataset.py        # Dataset image collection
+├── vision_utils.py           # Previous HOG utilities
+│
+├── requirements.txt
+├── README.md
+└── .gitignore
 ```
 
-The example images `glasses_new.jpg` and `pen_new.jpg`, when present at the
-project root, are not automatically included in training. Pass an image path
-explicitly to `test.py` to classify it.
+The previous HOG + Random Forest scripts are retained as part of the project's development history. The current YOLO detection workflow uses `models/best.onnx`, `test_yolo_image.py` and `webcam_yolo.py`.
 
-## Dataset
+## Dataset and Annotation
 
-The current dataset contains **551 images**:
+A custom dataset was prepared for 10 object categories.
 
-| Category | Images |
+The annotated YOLO dataset contains:
+
+| Dataset split | Images |
 |---|---:|
-| airpods | 66 |
-| apple | 50 |
-| bottle | 51 |
-| glasses | 60 |
-| mobile | 51 |
-| notebook | 52 |
-| pen | 50 |
-| perfume | 60 |
-| remote | 52 |
-| watch | 59 |
-| **Total** | **551** |
+| Training | 140 |
+| Validation | 30 |
+| **Total** | **170** |
 
-The dataset was checked during the latest training run: all 551 images were
-readable. Counts are reasonably balanced, but some files are very similar
-captures of the same scene. Grouped splitting keeps detected near-duplicate
-frames together rather than placing similar images in both training and test
-data. The current images also have limited capture diversity, so test results
-should not be assumed to represent every camera, background, or environment.
+Each image has a corresponding YOLO-format annotation file containing the object class ID and normalized bounding-box coordinates.
 
-## Image preprocessing and HOG
+The dataset was divided into training and validation sets with all 10 categories represented.
 
-Training, still-image prediction, and webcam prediction share the feature
-extraction function in `vision_utils.py`:
+Each class has 17 annotated images in the combined dataset.
 
-1. If bright-green capture text is detected in the upper-left region, that
-   region is cleaned in memory using OpenCV inpainting. Dataset files are not
-   modified. This detection targets the capture script's green preview label.
-2. The image is resized to **128 × 128** pixels.
-3. The resized image is converted from BGR to grayscale.
-4. An OpenCV HOG descriptor extracts edge and gradient features. Its window is
-   128 × 128, with 16 × 16 blocks, 8 × 8 block strides, 8 × 8 cells, and 9
-   orientation bins.
+## Model Training
 
-The same HOG preprocessing is used for training, still images, and full webcam
-frames. Resizing to a square can distort an image's aspect ratio. Inpainting
-is a targeted cleanup step, not a general image-enhancement method; green
-content in the targeted area could also be affected.
+The project uses the lightweight **YOLO11n (Nano)** architecture.
 
-## Model training and evaluation
+Training was performed in Google Colab using an NVIDIA Tesla T4 GPU.
 
-`train.py` extracts HOG features from the labeled images and groups same-class
-near-duplicates using a perceptual hash. It then:
+Training configuration:
 
-1. Reserves a grouped fold for held-out testing using five-fold
-   `StratifiedGroupKFold` splitting.
-2. Compares Random Forest models with 100 and 300 trees on the remaining data
-   using four-fold grouped cross-validation.
-3. Selects the tree count with the higher mean macro-F1.
-4. Prints grouped cross-validation results, held-out accuracy, per-class
-   precision/recall/F1, a confusion matrix, and Unknown prediction coverage.
-5. Retrains the selected Random Forest on all available images and saves it to
-   `result/best_model.joblib`.
+- Model: YOLO11n
+- Image size: 640 × 640
+- Maximum epochs: 100
+- Batch size: 16
+- Early stopping patience: 20
+- Training stopped at epoch 46.
+- Best model saved from epoch 26.
 
-### Latest grouped test results
+Early stopping automatically stopped training when validation performance did not improve.
 
-The latest run selected a **300-tree Random Forest**. On the separate
-held-out grouped test fold (**111 images**), it achieved:
+## Model Evaluation
 
-- **Accuracy:** 93.69%
-- **Macro-F1:** 92.98%
+The best model was evaluated on the 30-image validation set.
 
-At the selected **30%** score threshold, **76.58%** of test images were
-accepted as known classes; accepted predictions were **100% accurate on this
-test fold**, and 26 images were returned as `Unknown Object`.
+| Metric | Result |
+|---|---:|
+| Precision | 86.7% |
+| Recall | 82.4% |
+| mAP@50 | 88.6% |
+| mAP@50–95 | 60.2% |
 
-Notebook recognition is currently weak. In the latest test fold, notebook
-recall was **55%** (6 of 11 notebook images correctly classified). The
-notebook errors were predicted as apple (2), airpods (1), bottle (1), and
-remote (1). The small test sample means these class metrics can vary when the
-dataset or split changes.
+These metrics are based on a small validation dataset and should be treated as preliminary results rather than a guarantee of real-world accuracy.
 
-## Unknown Object and score threshold
+### Class-wise mAP@50
 
-The saved model contains a **30% threshold**, selected from grouped
-out-of-fold validation predictions in the latest run. When the top predicted
-class's Random Forest vote fraction is below this threshold, `test.py` and
-`live_detect.py` display `Unknown Object` rather than the top class.
+| Object | mAP@50 |
+|---|---:|
+| AirPods | 99.5% |
+| Apple | 99.5% |
+| Bottle | 83.0% |
+| Glasses | 99.5% |
+| Mobile | 91.3% |
+| Notebook | 99.5% |
+| Pen | 66.5% |
+| Perfume | 75.3% |
+| Remote | 99.5% |
+| Watch | 72.0% |
 
-This threshold can reduce forced low-scoring predictions; it **does not
-guarantee perfect recognition** or reliably detect every unfamiliar object.
-A Random Forest vote fraction is not a calibrated probability. Unknown
-objects can still receive a score above the threshold, and valid class images
-can be rejected as Unknown.
+## ONNX Model Export
 
-## Installation and usage
+After training, the best YOLO model was exported into ONNX format.
 
-Run commands from the project directory.
+The exported model is stored at:
 
-### 1. Install dependencies
-
-```bash
-python -m pip install -r requirements.txt
+```text
+models/best.onnx
 ```
 
-### 2. Capture more training images (optional)
+ONNX Runtime allows the model to run locally without requiring the PyTorch framework.
 
-For example, to add images to the `mobile` category:
+Model input shape:
 
-```bash
-python capture_dataset.py mobile
+```text
+[1, 3, 640, 640]
 ```
 
-Press **Space** to save an image and **Q** to exit. The preview shows a green
-category/count label, but the saved image does not include that text. Use only
-the ten supported category names so the training dataset still has the
-expected classes. Capture multiple examples with varied physical objects,
-backgrounds, lighting, angles, and distances.
+Model output shape:
 
-### 3. Train and evaluate
-
-```bash
-python train.py
+```text
+[1, 14, 8400]
 ```
 
-Training prints validation and held-out test results, then saves the updated
-model to `result/best_model.joblib`. The `result/` directory is ignored by
-Git; run training in a fresh checkout before making predictions if the model
-file is not present.
+## Installation and Setup
 
-### 4. Classify a still image
+### 1. Clone the repository
 
 ```bash
-python test.py "path_to_image.jpg"
+git clone YOUR_GITHUB_REPOSITORY_URL
+cd VisionClassify
 ```
 
-The script prints the model, predicted category or `Unknown Object`, and
-Random Forest vote fractions for each class.
-
-### 5. Run live webcam classification
+### 2. Create a virtual environment
 
 ```bash
-python live_detect.py
+python -m venv .venv-yolo
 ```
 
-Keep one object clearly visible near the center of the camera view. Press
-**Q** or **Esc** in the webcam window to quit. The script first tries the
-default camera backend and falls back to DirectShow if the first backend
-cannot read a frame.
+Activate it on Windows:
 
-## Limitations and future improvements
+```powershell
+.venv-yolo\Scripts\activate
+```
 
-- **Notebook recognition is weak**, as shown by its 55% recall on the latest
-  held-out test fold.
-- The dataset is small and has limited variety in backgrounds, lighting,
-  distance, and camera conditions. Additional clean real-world captures are
-  the most important next step.
-- The system predicts one label for a whole image or webcam frame. It does not
-  locate objects, handle multiple objects, or identify objects outside the
-  ten trained categories reliably.
-- The square resize can distort image shape, and grayscale HOG does not
-  represent color.
-- The Unknown threshold is based on validation scores; it is not a guarantee
-  of open-set recognition.
-- In the latest run, in-memory overlay cleanup removed a class-text shortcut,
-  but targeted inpainting can affect other bright-green pixels near the
-  upper-left corner.
-- Future improvements could include collecting more varied images, reviewing
-  labels and capture quality, evaluating on images from a separate camera or
-  environment, and testing more robust preprocessing or feature/model
-  approaches against grouped validation before adopting them.
+### 3. Install dependencies
+
+```bash
+python -m pip install opencv-python numpy onnxruntime
+```
+
+## Running the Project
+
+### 1. Verify ONNX Model Loading
+
+```bash
+python test_yolo.py
+```
+
+This checks whether the trained ONNX model loads successfully and displays its input and output shapes.
+
+### 2. Detect Objects in an Image
+
+Place a test image inside the `test_images` folder.
+
+For example:
+
+```text
+test_images/
+└── glasses.jpg
+```
+
+Run:
+
+```bash
+python test_yolo_image.py
+```
+
+The script predicts the object category, draws a bounding box and saves the result as:
+
+```text
+detection_result.jpg
+```
+
+### 3. Real-Time Webcam Detection
+
+Run:
+
+```bash
+python webcam_yolo.py
+```
+
+The application opens the webcam and performs live object detection.
+
+It displays:
+
+- Detected object name
+- Confidence score
+- Bounding box around the detected object
+
+Press **Q** to close the webcam window.
+
+## Features
+
+- Custom-trained YOLO11n object detection.
+- Detection of 10 everyday object categories.
+- Bounding-box visualization.
+- Confidence-score display.
+- Still-image object detection.
+- Real-time webcam detection.
+- Local execution using ONNX Runtime.
+- No database, web server or external API required.
+
+## Limitations
+
+- The annotated training dataset contains only 170 images.
+- Validation results are based on a small sample of 30 images.
+- Detection performance may vary with lighting, camera quality, distance, background and object orientation.
+- Objects outside the 10 trained categories are not reliably recognized.
+- Confidence scores do not guarantee prediction correctness.
+- CPU-based webcam inference performance depends
